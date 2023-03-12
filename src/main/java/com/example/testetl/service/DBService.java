@@ -19,7 +19,7 @@ public class DBService {
 		final DBConnector fromConnector = dbSelector.getDBConnector(fromDB);
 		final DBConnector toConnector = dbSelector.getDBConnector(toDB);
 
-		List<Colonnes> colonnes = fromConnector.getColonnesOfRequest(sqlRequest);
+		final List<Colonnes> colonnes = fromConnector.getColonnesOfRequest(sqlRequest);
 
 		toConnector.createTable(tableName, colonnes);
 	}
@@ -28,7 +28,7 @@ public class DBService {
 		final DBConnector fromConnector = dbSelector.getDBConnector(fromDB);
 		final DBConnector toConnector = dbSelector.getDBConnector(toDB);
 
-		List<List<Object>> lignes = fromConnector.getRowFromRequest(sqlRequest);
+		final List<List<Object>> lignes = fromConnector.getRowFromRequest(sqlRequest);
 
 		toConnector.insertData(tableName, lignes);
 	}

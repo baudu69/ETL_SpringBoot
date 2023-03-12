@@ -9,9 +9,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DBSelector {
-	private final JdbcTemplate mySqlJdbcTemplate;
-	private final JdbcTemplate postGreJdbcTemplate;
-	private final JdbcTemplate oracleJdbcTemplate;
 
 	private final MySQLConnector mySQLConnector;
 	private final MySQLConnector postGreConnector;
@@ -22,21 +19,9 @@ public class DBSelector {
 			@Qualifier("postGreJdbcTemplate") JdbcTemplate postGreJdbcTemplate,
 			@Qualifier("oracleJdbcTemplate") JdbcTemplate oracleJdbcTemplate
 	) {
-		this.mySqlJdbcTemplate = mySqlJdbcTemplate;
-		this.postGreJdbcTemplate = postGreJdbcTemplate;
-		this.oracleJdbcTemplate = oracleJdbcTemplate;
 		this.mySQLConnector = new MySQLConnector(mySqlJdbcTemplate);
 		this.postGreConnector = new MySQLConnector(postGreJdbcTemplate);
 		this.oracleConnector = new OracleConnector(oracleJdbcTemplate);
-	}
-
-	public JdbcTemplate getJdbcTemplate(String db) {
-		return switch (db) {
-			case "mysql" -> mySqlJdbcTemplate;
-			case "postgre" -> postGreJdbcTemplate;
-			case "oracle" -> oracleJdbcTemplate;
-			default -> null;
-		};
 	}
 
 	public DBConnector getDBConnector(String db) {
