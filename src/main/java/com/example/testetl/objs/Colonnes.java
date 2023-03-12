@@ -5,7 +5,7 @@ public record Colonnes(String name, String type, Integer taille, boolean primary
 		String sql = name;
 		sql += " ";
 		sql += type;
-		if (this.taille != null && !this.type.equals("DATE")) {
+		if (this.taille != null && !this.type.equals("DATE") && !this.type.equals("BIGINT")) {
 			sql += String.format("(%s)", taille);
 		}
 		sql += " ";

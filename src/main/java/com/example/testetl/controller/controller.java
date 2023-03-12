@@ -1,5 +1,6 @@
 package com.example.testetl.controller;
 
+import com.example.testetl.exception.TableAlreadyExistException;
 import com.example.testetl.service.DbService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -24,14 +25,15 @@ public class controller {
 
 	@GetMapping
 	@Transactional(rollbackOn = RuntimeException.class)
-	public ResponseEntity<String> test(@RequestParam String table, @RequestParam String sql) {
+	public ResponseEntity<String> test(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
 		try {
-			this.dbService.createTableFromRequest(table, sql);
+			this.dbService.createTableFromRequest(table, sql, fromDb, toDb);
 			this.dbService.insertData(
 					table,
-					this.dbService.getRowFromRequest(sql)
+					this.dbService.getRowFromRequest(sql, fromDb),
+					toDb
 			);
-		} catch (RuntimeException e) {
+		} catch (TableAlreadyExistException e) {
 			logger.warn(e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 		}

@@ -1,5 +1,6 @@
 package com.example.testetl.service;
 
+import com.example.testetl.configuration.DBSelector;
 import com.example.testetl.exception.TableAlreadyExistException;
 import com.example.testetl.objs.Colonnes;
 import org.slf4j.Logger;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -17,13 +20,13 @@ import java.util.Objects;
 @Service
 public class DbService {
 	private static final Logger logger = LoggerFactory.getLogger(DbService.class);
-	private final JdbcTemplate jdbcTemplate;
+	private final DBSelector dbSelector;
 
-	public DbService(JdbcTemplate jdbcTemplate) {
-		this.jdbcTemplate = jdbcTemplate;
+	public DbService(DBSelector dbSelector) {
+		this.dbSelector = dbSelector;
 	}
-	public void createTable(String name, List<Colonnes> colonnes) {
-		if (isTableExist(name)) {
+	private void createTable(String name, List<Colonnes> colonnes, String db) {
+		if (isTableExist(name, db)) {
 			throw new TableAlreadyExistException(name);
 		}
 		StringBuilder sql = new StringBuilder("CREATE TABLE %s (".formatted(name));
@@ -35,12 +38,12 @@ public class DbService {
 
 		final String sqlRequest = sql.toString();
 		logger.info(sqlRequest);
-		this.jdbcTemplate.execute(sqlRequest);
+		this.dbSelector.getJdbcTemplate(db).execute(sqlRequest);
 	}
 
-	private boolean isTableExist(String tableName) {
+	private boolean isTableExist(String tableName, String db) {
 		try {
-			DatabaseMetaData dbm = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection().getMetaData();
+			DatabaseMetaData dbm = Objects.requireNonNull(this.dbSelector.getJdbcTemplate(db).getDataSource()).getConnection().getMetaData();
 			ResultSet tables = dbm.getTables(null, null, tableName, null);
 			return tables.next();
 		} catch (SQLException throwables) {
@@ -56,16 +59,16 @@ public class DbService {
 						|| obj instanceof Date;
 	}
 
-	public void insertData(String tableName, List<List<Object>> data) {
+	public void insertData(String tableName, List<List<Object>> data, String db) {
 		StringBuilder sql = new StringBuilder("INSERT INTO %s VALUES".formatted(tableName));
 		for (List<Object> ligne : data) {
 			StringBuilder ligneStr = new StringBuilder("(");
 			for (Object obj : ligne) {
 				if (needComma(obj)) {
 					ligneStr
-							.append("\"")
+							.append("'")
 							.append(obj)
-							.append("\"")
+							.append("'")
 							.append(",");
 				} else {
 					ligneStr
@@ -82,19 +85,20 @@ public class DbService {
 		sql.append(";");
 		final String sqlRequest = sql.toString();
 		logger.info(sqlRequest);
-		this.jdbcTemplate.execute(sqlRequest);
+		this.dbSelector.getJdbcTemplate(db).execute(sqlRequest);
 	}
 
-	public void createTableFromRequest(String tableName, String requestSQL) {
+	public void createTableFromRequest(String tableName, String requestSQL, String fromDb, String toDb) {
 		List<Colonnes> colonnes = new ArrayList<>();
 		String requestFirst = getOnlyFirstResultSQL(requestSQL);
+		final JdbcTemplate jdbcTemplate = this.dbSelector.getJdbcTemplate(fromDb);
 		jdbcTemplate.query(requestFirst, (rs, rowNum) ->
 		{
 			ResultSetMetaData metadata = rs.getMetaData();
 			colonnes.addAll(getColumnOfResult(metadata));
 			return null;
 		});
-		this.createTable(tableName, colonnes);
+		this.createTable(tableName, colonnes, toDb);
 	}
 
 	private static List<Colonnes> getColumnOfResult(ResultSetMetaData metadata) throws SQLException {
@@ -114,7 +118,8 @@ public class DbService {
 		return request.replace(";", " LIMIT 1;");
 	}
 
-	public List<List<Object>> getRowFromRequest(String sql) {
+	public List<List<Object>> getRowFromRequest(String sql, String db) {
+		final JdbcTemplate jdbcTemplate = this.dbSelector.getJdbcTemplate(db);
 		return jdbcTemplate.query(sql, (rs, rowNum) ->
 		{
 			ResultSetMetaData metadata = rs.getMetaData();
@@ -129,9 +134,18 @@ public class DbService {
 
 	private static Class<?> convertTypesToSQLTypes(int type) {
 		return switch (type) {
-			case Types.VARCHAR -> String.class;
-			case Types.INTEGER, Types.BIGINT -> Integer.class;
-			case Types.DATE -> Date.class;
+			case Types.VARCHAR, Types.LONGVARCHAR -> String.class;
+			case Types.INTEGER, Types.TINYINT, Types.SMALLINT -> Integer.class;
+			case Types.DOUBLE, Types.REAL, Types.NUMERIC, Types.DECIMAL -> Double.class;
+			case Types.FLOAT -> Float.class;
+			case Types.BOOLEAN -> Boolean.class;
+			case Types.BIGINT -> Long.class;
+			case Types.DATE -> LocalDate.class;
+			case Types.TIME -> LocalTime.class;
+			case Types.TIMESTAMP -> LocalDateTime.class;
+			case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY -> Byte[].class;
+			case Types.CHAR -> Character.class;
+
 			default -> throw new IllegalStateException("Unexpected value: " + type);
 		};
 	}

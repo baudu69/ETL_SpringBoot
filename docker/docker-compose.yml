@@ -14,19 +14,18 @@ services:
       - '3306'
     volumes:
       - my-db:/var/lib/mysql
-  db2:
-    image: mysql:latest
-    restart: always
+  postgres:
+    container_name: postgres_demo
+    image: postgres:latest
     environment:
-      MYSQL_DATABASE: 'db'
-      MYSQL_USER: 'user'
-      MYSQL_PASSWORD: 'password'
-      MYSQL_ROOT_PASSWORD: 'password'
-    ports:
-      - '3307:3307'
-    expose:
-      - '3307'
+      POSTGRES_USER: super_admin
+      POSTGRES_PASSWORD: SomeSecretPassword
+      PGDATA: /data/postgres
     volumes:
-      - my-db:/var/lib/mysql
+      - postgres-db:/data/postgres
+    ports:
+      - "5432:5432"
 volumes:
   my-db:
+  postgres-db:
+    driver: local
