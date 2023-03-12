@@ -1,7 +1,7 @@
 package com.example.testetl.controller;
 
 import com.example.testetl.exception.TableAlreadyExistException;
-import com.example.testetl.service.DbService;
+import com.example.testetl.service.DBService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class controller {
 	private final static Logger logger = LoggerFactory.getLogger(controller.class);
-	private final DbService dbService;
+	private final DBService dbService;
 
-	public controller(DbService dbService) {
+	public controller(DBService dbService) {
 		this.dbService = dbService;
 	}
 
@@ -26,7 +26,7 @@ public class controller {
 	@Transactional
 	public ResponseEntity<String> createTable(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
 		try {
-			this.dbService.createTableFromRequest(table, sql, fromDb, toDb);
+			this.dbService.createSchema(table, sql, fromDb, toDb);
 		} catch (TableAlreadyExistException e) {
 			logger.warn(e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -38,11 +38,7 @@ public class controller {
 	@Transactional
 	public ResponseEntity<String> extractData(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
 		try {
-			this.dbService.insertData(
-					table,
-					this.dbService.getRowFromRequest(sql, fromDb),
-					toDb
-			);
+			this.dbService.extractData(table, sql, fromDb, toDb);
 		} catch (TableAlreadyExistException e) {
 			logger.warn(e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -54,12 +50,8 @@ public class controller {
 	@Transactional
 	public ResponseEntity<String> extractAndCreate(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
 		try {
-			this.dbService.createTableFromRequest(table, sql, fromDb, toDb);
-			this.dbService.insertData(
-					table,
-					this.dbService.getRowFromRequest(sql, fromDb),
-					toDb
-			);
+			this.dbService.createSchema(table, sql, fromDb, toDb);
+			this.dbService.extractData(table, sql, fromDb, toDb);
 		} catch (TableAlreadyExistException e) {
 			logger.warn(e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

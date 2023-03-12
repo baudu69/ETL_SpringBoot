@@ -22,4 +22,9 @@ public class DBConfig {
 	public JdbcTemplate postGreJdbcTemplate(@Qualifier("postGreDataSource") DataSource dataSource) {
 		return new JdbcTemplate(dataSource);
 	}
+
+	@Bean
+	public JdbcTemplate oracleJdbcTemplate(@Qualifier("oracleDataSource") DataSource dataSource) {
+		return new JdbcTemplate(dataSource);
+	}
 }
