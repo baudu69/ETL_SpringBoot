@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/api")
 public class controller {
 	private final static Logger logger = LoggerFactory.getLogger(controller.class);
 	private final DbService dbService;
@@ -22,10 +22,37 @@ public class controller {
 		this.dbService = dbService;
 	}
 
+	@GetMapping("/createTable")
+	@Transactional
+	public ResponseEntity<String> createTable(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
+		try {
+			this.dbService.createTableFromRequest(table, sql, fromDb, toDb);
+		} catch (TableAlreadyExistException e) {
+			logger.warn(e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+		return ResponseEntity.noContent().build();
+	}
 
-	@GetMapping
-	@Transactional(rollbackOn = RuntimeException.class)
-	public ResponseEntity<String> test(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
+	@GetMapping("/extractData")
+	@Transactional
+	public ResponseEntity<String> extractData(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
+		try {
+			this.dbService.insertData(
+					table,
+					this.dbService.getRowFromRequest(sql, fromDb),
+					toDb
+			);
+		} catch (TableAlreadyExistException e) {
+			logger.warn(e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/extractAndCreate")
+	@Transactional
+	public ResponseEntity<String> extractAndCreate(@RequestParam String table, @RequestParam String sql, @RequestParam String fromDb, @RequestParam String toDb) {
 		try {
 			this.dbService.createTableFromRequest(table, sql, fromDb, toDb);
 			this.dbService.insertData(
@@ -37,7 +64,8 @@ public class controller {
 			logger.warn(e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 		}
-
 		return ResponseEntity.noContent().build();
 	}
+
+
 }

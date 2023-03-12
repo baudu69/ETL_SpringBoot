@@ -9,7 +9,10 @@ public class DBSelector {
 	private final JdbcTemplate mySqlJdbcTemplate;
 	private final JdbcTemplate postGreJdbcTemplate;
 
-	public DBSelector(@Qualifier("mySqlJdbcTemplate") JdbcTemplate mySqlJdbcTemplate, @Qualifier("postGreJdbcTemplate") JdbcTemplate postGreJdbcTemplate) {
+	public DBSelector(
+			@Qualifier("mySqlJdbcTemplate") JdbcTemplate mySqlJdbcTemplate,
+			@Qualifier("postGreJdbcTemplate") JdbcTemplate postGreJdbcTemplate
+	) {
 		this.mySqlJdbcTemplate = mySqlJdbcTemplate;
 		this.postGreJdbcTemplate = postGreJdbcTemplate;
 	}
